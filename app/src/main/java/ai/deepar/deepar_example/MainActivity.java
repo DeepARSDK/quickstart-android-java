@@ -71,6 +71,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        setupCamera();
+    }
 
 
     @Override
@@ -287,7 +292,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         deepAR = new DeepAR(this);
         deepAR.setLicenseKey("your_license_key_goes_here");
         deepAR.initialize(this, this);
+        setupCamera();
+    }
 
+    private void setupCamera() {
         cameraGrabber = new CameraGrabber(cameraDevice);
         screenOrientation = getScreenOrientation();
 
@@ -329,7 +337,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 dialog.show();
             }
         });
-
     }
 
     private String getFilterPath(String filterName) {
