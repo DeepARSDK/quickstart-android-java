@@ -112,13 +112,8 @@ public class CameraGrabber
 
         this.resolutionPreset = resolutionPreset;
 
-        if (this.resolutionPreset == CameraResolutionPreset.P640x480) {
-            width = 640; height = 480;
-        } else if (this.resolutionPreset == CameraResolutionPreset.P1280x720) {
-            width = 1280; height = 720;
-        } else if (this.resolutionPreset == CameraResolutionPreset.P640x360) {
-            width = 640; height = 360;
-        }
+        width = this.resolutionPreset.getWidth();
+        height = this.resolutionPreset.getHeight();
 
         if (mThread != null) {
             mThread.reinitCamera(width, height);

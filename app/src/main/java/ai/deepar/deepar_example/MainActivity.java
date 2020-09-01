@@ -1,5 +1,6 @@
 package ai.deepar.deepar_example;
 
+import ai.deepar.ar.ARErrorType;
 import ai.deepar.ar.AREventListener;
 import ai.deepar.ar.CameraResolutionPreset;
 import ai.deepar.ar.DeepAR;
@@ -15,6 +16,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.media.Image;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
@@ -290,7 +292,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
     private void initializeDeepAR() {
         deepAR = new DeepAR(this);
-        deepAR.setLicenseKey("your_license_key_goes_here");
+        deepAR.setLicenseKey("your_license_key_here");
         deepAR.initialize(this, this);
         setupCamera();
     }
@@ -311,7 +313,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 break;
         }
 
-        cameraGrabber.setResolutionPreset(CameraResolutionPreset.P640x480);
+        // Available 1080p, 720p and 480p resolutions
+        cameraGrabber.setResolutionPreset(CameraResolutionPreset.P1280x720);
 
         final Activity context = this;
         cameraGrabber.initCamera(new CameraGrabberListener() {
@@ -402,6 +405,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        // If we are using on screen rendering we have to set surface view where DeepAR will render
         deepAR.setRenderSurface(holder.getSurface(), width, height);
     }
 
@@ -471,9 +475,15 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     @Override
-    public void error(String s) {
+    public void frameAvailable(Image image) {
 
     }
+
+    @Override
+    public void error(ARErrorType arErrorType, String s) {
+
+    }
+
 
     @Override
     public void effectSwitched(String s) {
