@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         masks.add("lion");
         masks.add("smallface");
         masks.add("teddycigar");
-        masks.add("kanye");
+        masks.add("background_segmentation");
         masks.add("tripleface");
         masks.add("sleepingmask");
         masks.add("fatify");
@@ -364,7 +364,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private void gotoPrevious() {
         if (activeFilterType == 0) {
+
             currentMask = (currentMask - 1) % masks.size();
+            if (currentMask < 0 ) {
+                currentMask = masks.size()-1;
+            }
             deepAR.switchEffect("mask", getFilterPath(masks.get(currentMask)));
         } else if (activeFilterType == 1) {
             currentEffect = (currentEffect - 1) % effects.size();
