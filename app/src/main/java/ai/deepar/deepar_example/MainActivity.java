@@ -15,6 +15,8 @@ import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.media.Image;
 import android.media.MediaScannerConnection;
@@ -22,13 +24,14 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.text.format.DateFormat;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RadioButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
@@ -54,6 +57,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     ArrayList<String> filters;
 
     private int activeFilterType = 0;
+    private boolean recording = false;
+    private boolean currentSwitchRecording = false;
+    private String recordingPath = Environment.getExternalStorageDirectory() + File.separator + "video.mp4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -172,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         arView.setVisibility(View.GONE);
         arView.setVisibility(View.VISIBLE);
 
-        ImageButton screenshotBtn = findViewById(R.id.recordButton);
+        final ImageButton screenshotBtn = findViewById(R.id.recordButton);
         screenshotBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -186,6 +192,66 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             public void onClick(View v) {
                 cameraDevice = cameraGrabber.getCurrCameraDevice() ==  Camera.CameraInfo.CAMERA_FACING_FRONT ?  Camera.CameraInfo.CAMERA_FACING_BACK :  Camera.CameraInfo.CAMERA_FACING_FRONT;
                 cameraGrabber.changeCameraDevice(cameraDevice);
+            }
+        });
+
+
+        final TextView screenShotModeButton = findViewById(R.id.screenshotModeButton);
+        final TextView recordModeBtn = findViewById(R.id.recordModeButton);
+
+        recordModeBtn.getBackground().setAlpha(0x00);
+
+
+
+        screenShotModeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(currentSwitchRecording) {
+                    if(recording) {
+                        Toast.makeText(getApplicationContext(), "Cannot switch to screenshots while recording!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    recordModeBtn.getBackground().setAlpha(0x00);
+                    screenShotModeButton.getBackground().setAlpha(0xA0);
+                    screenshotBtn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            deepAR.takeScreenshot();
+                        }
+                    });
+
+                    currentSwitchRecording = !currentSwitchRecording;
+                }
+            }
+        });
+
+
+
+        recordModeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if(!currentSwitchRecording) {
+
+                    recordModeBtn.getBackground().setAlpha(0xA0);
+                    screenShotModeButton.getBackground().setAlpha(0x00);
+                    screenshotBtn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if(recording) {
+                                deepAR.stopVideoRecording();
+                                Toast.makeText(getApplicationContext(), "Saved video to: " + recordingPath, Toast.LENGTH_LONG).show();
+                            } else {
+                                deepAR.startVideoRecording(recordingPath);
+                                Toast.makeText(getApplicationContext(), "Started video recording!", Toast.LENGTH_SHORT).show();
+                            }
+                            recording = !recording;
+                        }
+                    });
+
+                    currentSwitchRecording = !currentSwitchRecording;
+                }
             }
         });
 
