@@ -99,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void initialize() {
-        setContentView(R.layout.activity_main);
         initializeDeepAR();
         initializeFilters();
         initalizeViews();
@@ -145,19 +144,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private void initalizeViews() {
         ImageButton previousMask = findViewById(R.id.previousMask);
-        previousMask.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
         ImageButton nextMask = findViewById(R.id.nextMask);
-        nextMask.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
 
         final RadioButton radioMasks = findViewById(R.id.masks);
         final RadioButton radioEffects = findViewById(R.id.effects);
