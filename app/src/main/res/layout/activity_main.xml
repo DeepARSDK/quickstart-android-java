@@ -15,42 +15,9 @@
     <RelativeLayout
         android:id="@+id/relativeLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <TextView
-            android:id="@+id/screenshotModeButton"
-            android:background="@drawable/rounded_corners"
-            android:layout_width="100dp"
-            android:layout_height="30dp"
-            android:elegantTextHeight="true"
-            android:layout_above="@id/recordButton"
-            android:layout_alignParentEnd="true"
-            android:clickable="true"
-            android:layout_marginRight="25dp"
-            android:requiresFadingEdge="vertical"
-            android:textAlignment="center"
-            android:fadingEdgeLength="56dp"
-            android:text="  Screenshot  " />
-
-
-
-
-
-        <TextView
-            android:id="@+id/recordModeButton"
-            android:layout_width="100dp"
-            android:layout_height="30dp"
-            android:elegantTextHeight="true"
-            android:layout_above="@id/recordButton"
-            android:layout_alignParentStart="true"
-            android:background="@drawable/rounded_corners"
-            android:clickable="true"
-            android:layout_marginLeft="25dp"
-            android:textAlignment="center"
-            android:fadingEdgeLength="32dp"
-            android:requiresFadingEdge="horizontal"
-            android:text="  Record  " />
-
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="0dp">
 
         <ImageButton
             android:id="@+id/recordButton"
@@ -62,6 +29,7 @@
             android:background="@null"
             android:scaleType="centerInside"
             android:src="@drawable/record_selector" />
+
 
         <ImageButton
             android:id="@+id/switchCamera"
@@ -76,6 +44,20 @@
             android:scaleType="centerInside"
             android:src="@drawable/camera_white" />
 
+
+        <ImageButton
+            android:id="@+id/openActivity"
+
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_alignParentStart="false"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="15dp"
+            android:layout_marginEnd="5dp"
+            android:background="@null"
+            android:scaleType="centerInside"
+            android:src="@drawable/open_new_activity" />
 
         <ImageButton
             android:id="@+id/previousMask"
@@ -179,6 +161,37 @@
                     android:textColor="#ffffff" />
             </RelativeLayout>
         </LinearLayout>
+
+
+        <TextView
+            android:id="@+id/screenshotModeButton"
+            android:layout_width="100dp"
+            android:layout_height="30dp"
+            android:layout_above="@id/recordButton"
+            android:layout_alignParentEnd="true"
+            android:layout_marginRight="25dp"
+            android:background="@drawable/rounded_corners"
+            android:clickable="true"
+            android:elegantTextHeight="true"
+            android:fadingEdgeLength="56dp"
+            android:requiresFadingEdge="vertical"
+            android:text="  Screenshot  "
+            android:textAlignment="center" />
+
+        <TextView
+            android:id="@+id/recordModeButton"
+            android:layout_width="100dp"
+            android:layout_height="30dp"
+            android:layout_above="@id/recordButton"
+            android:layout_alignParentStart="true"
+            android:layout_marginLeft="25dp"
+            android:background="@drawable/rounded_corners"
+            android:clickable="true"
+            android:elegantTextHeight="true"
+            android:fadingEdgeLength="32dp"
+            android:requiresFadingEdge="horizontal"
+            android:text="  Record  "
+            android:textAlignment="center" />
 
 
     </RelativeLayout>

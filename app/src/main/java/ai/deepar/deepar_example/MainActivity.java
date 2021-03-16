@@ -12,11 +12,10 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Rect;
 import android.hardware.Camera;
 import android.media.Image;
 import android.media.MediaScannerConnection;
@@ -28,7 +27,6 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -81,10 +79,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     protected void onStart() {
+        initialize();
         super.onStart();
         setupCamera();
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode,  String[] permissions, int[] grantResults) {
@@ -182,13 +180,25 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             }
         });
 
+        ImageButton openActivity = findViewById(R.id.openActivity);
+        openActivity.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent myIntent = new Intent(MainActivity.this, BasicActivity.class);
+                MainActivity.this.startActivity(myIntent);
+                //deepAR.release(); moved to onStop();
+            }
+
+
+        });
+
+
 
         final TextView screenShotModeButton = findViewById(R.id.screenshotModeButton);
         final TextView recordModeBtn = findViewById(R.id.recordModeButton);
 
         recordModeBtn.getBackground().setAlpha(0x00);
-
-
+        screenShotModeButton.getBackground().setAlpha(0xA0);
 
         screenShotModeButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -435,6 +445,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     protected void onStop() {
         super.onStop();
+        recording = false;
+        currentSwitchRecording = false;
         if (cameraGrabber == null) {
             return;
         }
@@ -442,6 +454,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         cameraGrabber.stopPreview();
         cameraGrabber.releaseCamera();
         cameraGrabber = null;
+        deepAR.release();
+        deepAR = null;
     }
 
     @Override
@@ -518,7 +532,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     @Override
     public void initialized() {
-
+        // Restore effect state after deepar release
+        deepAR.switchEffect("mask", getFilterPath(masks.get(currentMask)));
+        deepAR.switchEffect("effect", getFilterPath(effects.get(currentEffect)));
+        deepAR.switchEffect("filter", getFilterPath(filters.get(currentFilter)));
     }
 
     @Override
