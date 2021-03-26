@@ -4,6 +4,7 @@ import ai.deepar.ar.ARErrorType;
 import ai.deepar.ar.AREventListener;
 import ai.deepar.ar.CameraResolutionPreset;
 import ai.deepar.ar.DeepAR;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -16,13 +17,13 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.hardware.Camera;
 import android.media.Image;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.format.DateFormat;
 import android.util.DisplayMetrics;
+import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -32,16 +33,31 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
+
+import androidx.camera.core.*;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.lifecycle.LifecycleOwner;
+import ai.deepar.ar.DeepARImageFormat;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, AREventListener {
 
-    private CameraGrabber cameraGrabber;
-    private int defaultCameraDevice = Camera.CameraInfo.CAMERA_FACING_FRONT;
-    private int cameraDevice = defaultCameraDevice;
+    // Default camera lens value, change to CameraSelector.LENS_FACING_BACK to initialize with back camera
+    private int defaultLensFacing = CameraSelector.LENS_FACING_FRONT;
+    private int lensFacing = defaultLensFacing;
+    private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
+    private ByteBuffer[] buffers;
+    private int currentBuffer = 0;
+    private static final int NUMBER_OF_BUFFERS=2;
+
     private DeepAR deepAR;
 
     private int currentMask=0;
@@ -63,7 +79,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+    }
 
+    @Override
+    protected void onStart() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED ||
                 ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -74,14 +93,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             // Permission has already been granted
             initialize();
         }
-
-    }
-
-    @Override
-    protected void onStart() {
-        initialize();
         super.onStart();
-        setupCamera();
     }
 
     @Override
@@ -91,8 +103,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                 if (grantResult != PackageManager.PERMISSION_GRANTED) {
                     return; // no permission
                 }
-                initialize();
             }
+            initialize();
         }
     }
 
@@ -175,8 +187,18 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         switchCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cameraDevice = cameraGrabber.getCurrCameraDevice() ==  Camera.CameraInfo.CAMERA_FACING_FRONT ?  Camera.CameraInfo.CAMERA_FACING_BACK :  Camera.CameraInfo.CAMERA_FACING_FRONT;
-                cameraGrabber.changeCameraDevice(cameraDevice);
+                lensFacing = lensFacing ==  CameraSelector.LENS_FACING_FRONT ?  CameraSelector.LENS_FACING_BACK :  CameraSelector.LENS_FACING_FRONT ;
+                //unbind immediately to avoid mirrored frame.
+                ProcessCameraProvider cameraProvider = null;
+                try {
+                    cameraProvider = cameraProviderFuture.get();
+                    cameraProvider.unbindAll();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                setupCamera();
             }
         });
 
@@ -186,7 +208,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             public void onClick(View v) {
                 Intent myIntent = new Intent(MainActivity.this, BasicActivity.class);
                 MainActivity.this.startActivity(myIntent);
-                //deepAR.release(); moved to onStop();
             }
 
 
@@ -427,35 +448,33 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private void gotoPrevious() {
         if (activeFilterType == 0) {
-
-            currentMask = (currentMask - 1) % masks.size();
-            if (currentMask < 0 ) {
-                currentMask = masks.size()-1;
-            }
+            currentMask = (currentMask - 1 + masks.size()) % masks.size();
             deepAR.switchEffect("mask", getFilterPath(masks.get(currentMask)));
         } else if (activeFilterType == 1) {
-            currentEffect = (currentEffect - 1) % effects.size();
+            currentEffect = (currentEffect - 1 + effects.size()) % effects.size();
             deepAR.switchEffect("effect", getFilterPath(effects.get(currentEffect)));
         } else if (activeFilterType == 2) {
-            currentFilter = (currentFilter - 1) % filters.size();
+            currentFilter = (currentFilter - 1 + filters.size()) % filters.size();
             deepAR.switchEffect("filter", getFilterPath(filters.get(currentFilter)));
         }
     }
 
     @Override
     protected void onStop() {
-        super.onStop();
         recording = false;
         currentSwitchRecording = false;
-        if (cameraGrabber == null) {
-            return;
+        ProcessCameraProvider cameraProvider = null;
+        try {
+            cameraProvider = cameraProviderFuture.get();
+            cameraProvider.unbindAll();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        cameraGrabber.setFrameReceiver(null);
-        cameraGrabber.stopPreview();
-        cameraGrabber.releaseCamera();
-        cameraGrabber = null;
         deepAR.release();
         deepAR = null;
+        super.onStop();
     }
 
     @Override
