@@ -73,7 +73,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int activeFilterType = 0;
     private boolean recording = false;
     private boolean currentSwitchRecording = false;
-    private String recordingPath = Environment.getExternalStorageDirectory() + File.separator + "video.mp4";
+
+    private int width = 0;
+    private int height = 0;
+
+    private String recordingPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "video.mp4";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -261,7 +265,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                                 deepAR.stopVideoRecording();
                                 Toast.makeText(getApplicationContext(), "Saved video to: " + recordingPath, Toast.LENGTH_LONG).show();
                             } else {
-                                deepAR.startVideoRecording(recordingPath);
+                                deepAR.startVideoRecording(recordingPath, width/2, height/2);
                                 Toast.makeText(getApplicationContext(), "Started video recording!", Toast.LENGTH_SHORT).show();
                             }
                             recording = !recording;
@@ -320,8 +324,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
-        int width = dm.widthPixels;
-        int height = dm.heightPixels;
+        width = dm.widthPixels;
+        height = dm.heightPixels;
         int orientation;
         // if the device's natural orientation is portrait:
         if ((rotation == Surface.ROTATION_0
