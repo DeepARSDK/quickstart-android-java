@@ -139,6 +139,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         masks.add("slash");
         masks.add("twistedface");
         masks.add("grumpycat");
+        masks.add("Helmet_PBR_V1");
 
         effects = new ArrayList<>();
         effects.add("none");
