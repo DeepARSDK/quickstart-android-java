@@ -52,11 +52,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     // Default camera lens value, change to CameraSelector.LENS_FACING_BACK to initialize with back camera
     private int defaultLensFacing = CameraSelector.LENS_FACING_FRONT;
+    private ARSurfaceProvider surfaceProvider = null;
     private int lensFacing = defaultLensFacing;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ByteBuffer[] buffers;
     private int currentBuffer = 0;
     private static final int NUMBER_OF_BUFFERS=2;
+    private static final boolean useExternalCameraTexture = true;
 
     private DeepAR deepAR;
 
@@ -402,66 +404,84 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
-        CameraResolutionPreset cameraPreset = CameraResolutionPreset.P640x480;
+        CameraResolutionPreset cameraResolutionPreset = CameraResolutionPreset.P1920x1080;
         int width;
         int height;
         int orientation = getScreenOrientation();
         if (orientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE || orientation ==ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
-            width = cameraPreset.getWidth();
-            height =  cameraPreset.getHeight();
+            width = cameraResolutionPreset.getWidth();
+            height =  cameraResolutionPreset.getHeight();
         } else {
-            width = cameraPreset.getHeight();
-            height = cameraPreset.getWidth();
-        }
-        buffers = new ByteBuffer[NUMBER_OF_BUFFERS];
-        for (int i = 0; i < NUMBER_OF_BUFFERS; i++) {
-            buffers[i] = ByteBuffer.allocateDirect(width * height * 3);
-            buffers[i].order(ByteOrder.nativeOrder());
-            buffers[i].position(0);
+            width = cameraResolutionPreset.getHeight();
+            height = cameraResolutionPreset.getWidth();
         }
 
-        ImageAnalysis imageAnalysis = new ImageAnalysis.Builder().setTargetResolution(new Size(width, height)).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build();
-        imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), new ImageAnalysis.Analyzer() {
-            @Override
-            public void analyze(@NonNull ImageProxy image) {
-                //image.getImageInfo().getTimestamp();
-                byte[] byteData;
-                ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
-                ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
-                ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
-
-                int ySize = yBuffer.remaining();
-                int uSize = uBuffer.remaining();
-                int vSize = vBuffer.remaining();
-
-                byteData = new byte[ySize + uSize + vSize];
-
-                //U and V are swapped
-                yBuffer.get(byteData, 0, ySize);
-                vBuffer.get(byteData, ySize, vSize);
-                uBuffer.get(byteData, ySize + vSize, uSize);
-
-                buffers[currentBuffer].put(byteData);
-                buffers[currentBuffer].position(0);
-                if(deepAR != null) {
-                    deepAR.receiveFrame(buffers[currentBuffer],
-                            image.getWidth(), image.getHeight(),
-                            image.getImageInfo().getRotationDegrees(),
-                            lensFacing == CameraSelector.LENS_FACING_FRONT,
-                            DeepARImageFormat.YUV_420_888,
-                            image.getPlanes()[1].getPixelStride()
-                    );
-                }
-                currentBuffer = ( currentBuffer + 1 ) % NUMBER_OF_BUFFERS;
-                image.close();
-            }
-        });
-
+        Size cameraResolution = new Size(width, height);
         CameraSelector cameraSelector = new CameraSelector.Builder().requireLensFacing(lensFacing).build();
-        cameraProvider.unbindAll();
-        cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, imageAnalysis);
 
+        if(useExternalCameraTexture) {
+            Preview preview = new Preview.Builder()
+                    .setTargetResolution(cameraResolution)
+                    .build();
+
+            cameraProvider.unbindAll();
+            cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, preview);
+            if(surfaceProvider == null) {
+                surfaceProvider = new ARSurfaceProvider(this, deepAR);
+            }
+            preview.setSurfaceProvider(surfaceProvider);
+            surfaceProvider.setMirror(lensFacing == CameraSelector.LENS_FACING_FRONT);
+        } else {
+            buffers = new ByteBuffer[NUMBER_OF_BUFFERS];
+            for (int i = 0; i < NUMBER_OF_BUFFERS; i++) {
+                buffers[i] = ByteBuffer.allocateDirect(width * height * 3);
+                buffers[i].order(ByteOrder.nativeOrder());
+                buffers[i].position(0);
+            }
+            ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                    .setTargetResolution(cameraResolution)
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build();
+            imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), imageAnalyzer);
+            cameraProvider.unbindAll();
+            cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, imageAnalysis);
+        }
     }
+
+    private ImageAnalysis.Analyzer imageAnalyzer = new ImageAnalysis.Analyzer() {
+        @Override
+        public void analyze(@NonNull ImageProxy image) {
+            byte[] byteData;
+            ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
+            ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
+            ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
+
+            int ySize = yBuffer.remaining();
+            int uSize = uBuffer.remaining();
+            int vSize = vBuffer.remaining();
+
+            byteData = new byte[ySize + uSize + vSize];
+
+            //U and V are swapped
+            yBuffer.get(byteData, 0, ySize);
+            vBuffer.get(byteData, ySize, vSize);
+            uBuffer.get(byteData, ySize + vSize, uSize);
+
+            buffers[currentBuffer].put(byteData);
+            buffers[currentBuffer].position(0);
+            if (deepAR != null) {
+                deepAR.receiveFrame(buffers[currentBuffer],
+                        image.getWidth(), image.getHeight(),
+                        image.getImageInfo().getRotationDegrees(),
+                        lensFacing == CameraSelector.LENS_FACING_FRONT,
+                        DeepARImageFormat.YUV_420_888,
+                        image.getPlanes()[1].getPixelStride()
+                );
+            }
+            currentBuffer = (currentBuffer + 1) % NUMBER_OF_BUFFERS;
+            image.close();
+        }
+    };
 
 
     private String getFilterPath(String filterName) {
@@ -518,6 +538,9 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if(surfaceProvider != null) {
+            surfaceProvider.stop();
+        }
         if (deepAR == null) {
             return;
         }
