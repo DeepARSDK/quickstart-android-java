@@ -530,6 +530,10 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        if(surfaceProvider != null) {
+            surfaceProvider.stop();
+            surfaceProvider = null;
+        }
         deepAR.release();
         deepAR = null;
         super.onStop();
