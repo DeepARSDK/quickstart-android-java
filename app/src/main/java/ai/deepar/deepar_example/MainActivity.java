@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
@@ -79,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int width = 0;
     private int height = 0;
 
-    private String recordingPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "video.mp4";
+    private File videoFileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -266,10 +267,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                         public void onClick(View v) {
                             if(recording) {
                                 deepAR.stopVideoRecording();
-                                Toast.makeText(getApplicationContext(), "Saved video to: " + recordingPath, Toast.LENGTH_LONG).show();
+                                Toast.makeText(getApplicationContext(), "Recording " + videoFileName.getName() + " saved.", Toast.LENGTH_LONG).show();
                             } else {
-                                deepAR.startVideoRecording(recordingPath, width/2, height/2);
-                                Toast.makeText(getApplicationContext(), "Started video recording!", Toast.LENGTH_SHORT).show();
+                                videoFileName = new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), "video_" + new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(new Date()) + ".mp4");
+                                deepAR.startVideoRecording(videoFileName.toString(), width/2, height/2);
+                                Toast.makeText(getApplicationContext(), "Recording started.", Toast.LENGTH_SHORT).show();
                             }
                             recording = !recording;
                         }
@@ -575,14 +577,14 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public void screenshotTaken(Bitmap bitmap) {
         CharSequence now = DateFormat.format("yyyy_MM_dd_hh_mm_ss", new Date());
         try {
-            File imageFile = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + "/DeepAR_" + now + ".jpg");
+            File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "image_" + now + ".jpg");
             FileOutputStream outputStream = new FileOutputStream(imageFile);
             int quality = 100;
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
             outputStream.flush();
             outputStream.close();
             MediaScannerConnection.scanFile(MainActivity.this, new String[]{imageFile.toString()}, null, null);
-            Toast.makeText(MainActivity.this, "Screenshot saved", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "Screenshot " + imageFile.getName() + " saved.", Toast.LENGTH_SHORT).show();
         } catch (Throwable e) {
             e.printStackTrace();
         }
