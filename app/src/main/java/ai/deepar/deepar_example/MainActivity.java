@@ -170,13 +170,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
         SurfaceView arView = findViewById(R.id.surface);
 
-        arView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                deepAR.onClick();
-            }
-        });
-
         arView.getHolder().addCallback(this);
 
         // Surface might already be initialized, so we force the call to onSurfaceChanged
