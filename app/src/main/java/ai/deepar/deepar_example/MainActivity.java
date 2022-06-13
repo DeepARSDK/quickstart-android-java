@@ -69,11 +69,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private int screenOrientation;
 
-    ArrayList<String> masks;
     ArrayList<String> effects;
-    ArrayList<String> filters;
 
-    private int activeFilterType = 0;
     private boolean recording = false;
     private boolean currentSwitchRecording = false;
 
@@ -122,51 +119,32 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void initializeFilters() {
-        masks = new ArrayList<>();
-        masks.add("none");
-        masks.add("aviators");
-        masks.add("bigmouth");
-        masks.add("dalmatian");
-        masks.add("flowers");
-        masks.add("koala");
-        masks.add("lion");
-        masks.add("smallface");
-        masks.add("teddycigar");
-        masks.add("background_segmentation");
-        masks.add("tripleface");
-        masks.add("sleepingmask");
-        masks.add("fatify");
-        masks.add("obama");
-        masks.add("mudmask");
-        masks.add("pug");
-        masks.add("slash");
-        masks.add("twistedface");
-        masks.add("grumpycat");
-        masks.add("Helmet_PBR_V1");
-
         effects = new ArrayList<>();
         effects.add("none");
-        effects.add("fire");
-        effects.add("rain");
-        effects.add("heart");
-        effects.add("blizzard");
+        effects.add("viking_helmet.deepar");
+        effects.add("MakeupLook.deepar");
+        effects.add("Split_View_Look.deepar");
+        effects.add("Emotions_Exaggerator.deepar");
+        effects.add("Emotion_Meter.deepar");
+        effects.add("Stallone.deepar");
+        effects.add("flower_face.deepar");
+        effects.add("galaxy_background.deepar");
+        effects.add("Humanoid.deepar");
+        effects.add("Neon_Devil_Horns.deepar");
+        effects.add("Ping_Pong.deepar");
+        effects.add("Pixel_Hearts.deepar");
+        effects.add("Snail.deepar");
+        effects.add("Hope.deepar");
+        effects.add("Vendetta_Mask.deepar");
+        effects.add("Fire_Effect.deepar");
+        effects.add("burning_effect.deepar");
+        effects.add("Elephant_Trunk.deepar");
 
-        filters = new ArrayList<>();
-        filters.add("none");
-        filters.add("filmcolorperfection");
-        filters.add("tv80");
-        filters.add("drawingmanga");
-        filters.add("sepia");
-        filters.add("bleachbypass");
     }
 
     private void initalizeViews() {
         ImageButton previousMask = findViewById(R.id.previousMask);
         ImageButton nextMask = findViewById(R.id.nextMask);
-
-        final RadioButton radioMasks = findViewById(R.id.masks);
-        final RadioButton radioEffects = findViewById(R.id.effects);
-        final RadioButton radioFilters = findViewById(R.id.filters);
 
         SurfaceView arView = findViewById(R.id.surface);
 
@@ -213,7 +191,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
 
         });
-
 
 
         final TextView screenShotModeButton = findViewById(R.id.screenshotModeButton);
@@ -289,30 +266,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             }
         });
 
-        radioMasks.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                radioEffects.setChecked(false);
-                radioFilters.setChecked(false);
-                activeFilterType = 0;
-            }
-        });
-        radioEffects.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                radioMasks.setChecked(false);
-                radioFilters.setChecked(false);
-                activeFilterType = 1;
-            }
-        });
-        radioFilters.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                radioEffects.setChecked(false);
-                radioMasks.setChecked(false);
-                activeFilterType = 2;
-            }
-        });
     }
     /*
             get interface orientation from
@@ -487,29 +440,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void gotoNext() {
-        if (activeFilterType == 0) {
-            currentMask = (currentMask + 1) % masks.size();
-            deepAR.switchEffect("mask", getFilterPath(masks.get(currentMask)));
-        } else if (activeFilterType == 1) {
-            currentEffect = (currentEffect + 1) % effects.size();
-            deepAR.switchEffect("effect", getFilterPath(effects.get(currentEffect)));
-        } else if (activeFilterType == 2) {
-            currentFilter = (currentFilter + 1) % filters.size();
-            deepAR.switchEffect("filter", getFilterPath(filters.get(currentFilter)));
-        }
+        currentEffect = (currentEffect + 1) % effects.size();
+        deepAR.switchEffect("effect", getFilterPath(effects.get(currentEffect)));
     }
 
     private void gotoPrevious() {
-        if (activeFilterType == 0) {
-            currentMask = (currentMask - 1 + masks.size()) % masks.size();
-            deepAR.switchEffect("mask", getFilterPath(masks.get(currentMask)));
-        } else if (activeFilterType == 1) {
-            currentEffect = (currentEffect - 1 + effects.size()) % effects.size();
-            deepAR.switchEffect("effect", getFilterPath(effects.get(currentEffect)));
-        } else if (activeFilterType == 2) {
-            currentFilter = (currentFilter - 1 + filters.size()) % filters.size();
-            deepAR.switchEffect("filter", getFilterPath(filters.get(currentFilter)));
-        }
+        currentEffect = (currentEffect - 1 + effects.size()) % effects.size();
+        deepAR.switchEffect("effect", getFilterPath(effects.get(currentEffect)));
     }
 
     @Override
@@ -612,9 +549,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void initialized() {
         // Restore effect state after deepar release
-        deepAR.switchEffect("mask", getFilterPath(masks.get(currentMask)));
         deepAR.switchEffect("effect", getFilterPath(effects.get(currentEffect)));
-        deepAR.switchEffect("filter", getFilterPath(filters.get(currentFilter)));
     }
 
     @Override
