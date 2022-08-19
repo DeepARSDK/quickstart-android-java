@@ -1,18 +1,6 @@
 package ai.deepar.deepar_example;
 
-import ai.deepar.ar.ARErrorType;
-import ai.deepar.ar.AREventListener;
-import ai.deepar.ar.CameraResolutionPreset;
-import ai.deepar.ar.DeepAR;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -29,9 +17,19 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ImageButton;
-import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -44,9 +42,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
-import androidx.camera.core.*;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.lifecycle.LifecycleOwner;
+import ai.deepar.ar.ARErrorType;
+import ai.deepar.ar.AREventListener;
+import ai.deepar.ar.CameraResolutionPreset;
+import ai.deepar.ar.DeepAR;
 import ai.deepar.ar.DeepARImageFormat;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, AREventListener {
@@ -58,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ByteBuffer[] buffers;
     private int currentBuffer = 0;
+    private boolean buffersInitialized = false;
     private static final int NUMBER_OF_BUFFERS=2;
     private static final boolean useExternalCameraTexture = true;
 
@@ -380,26 +380,29 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             preview.setSurfaceProvider(surfaceProvider);
             surfaceProvider.setMirror(lensFacing == CameraSelector.LENS_FACING_FRONT);
         } else {
-            buffers = new ByteBuffer[NUMBER_OF_BUFFERS];
-            for (int i = 0; i < NUMBER_OF_BUFFERS; i++) {
-                buffers[i] = ByteBuffer.allocateDirect(width * height * 3);
-                buffers[i].order(ByteOrder.nativeOrder());
-                buffers[i].position(0);
-            }
             ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                     .setTargetResolution(cameraResolution)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build();
             imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), imageAnalyzer);
+            buffersInitialized = false;
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, imageAnalysis);
+        }
+    }
+
+    private void initializeBuffers(int size) {
+        this.buffers = new ByteBuffer[NUMBER_OF_BUFFERS];
+        for (int i = 0; i < NUMBER_OF_BUFFERS; i++) {
+            this.buffers[i] = ByteBuffer.allocateDirect(size);
+            this.buffers[i].order(ByteOrder.nativeOrder());
+            this.buffers[i].position(0);
         }
     }
 
     private ImageAnalysis.Analyzer imageAnalyzer = new ImageAnalysis.Analyzer() {
         @Override
         public void analyze(@NonNull ImageProxy image) {
-            byte[] byteData;
             ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
             ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
             ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
@@ -408,7 +411,12 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             int uSize = uBuffer.remaining();
             int vSize = vBuffer.remaining();
 
-            byteData = new byte[ySize + uSize + vSize];
+            if(!buffersInitialized) {
+                buffersInitialized = true;
+                initializeBuffers(ySize + uSize + vSize);
+            }
+
+            byte[] byteData = new byte[ySize + uSize + vSize];
 
             //U and V are swapped
             yBuffer.get(byteData, 0, ySize);
