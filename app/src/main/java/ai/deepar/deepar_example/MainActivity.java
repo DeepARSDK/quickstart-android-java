@@ -418,10 +418,42 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
             byte[] byteData = new byte[ySize + uSize + vSize];
 
+            int width = image.getWidth();
+            int yStride = image.getPlanes()[0].getRowStride();
+            int uStride = image.getPlanes()[1].getRowStride();
+            int vStride = image.getPlanes()[2].getRowStride();
+            int outputOffset = 0;
+            if (width == yStride) {
+                yBuffer.get(byteData, outputOffset, ySize);
+                outputOffset += ySize;
+            } else {
+                for (int inputOffset = 0; inputOffset < ySize; inputOffset += yStride) {
+                    yBuffer.position(inputOffset);
+                    yBuffer.get(byteData, outputOffset, Math.min(yBuffer.remaining(), width));
+                    outputOffset += width;
+                }
+            }
             //U and V are swapped
-            yBuffer.get(byteData, 0, ySize);
-            vBuffer.get(byteData, ySize, vSize);
-            uBuffer.get(byteData, ySize + vSize, uSize);
+            if (width == vStride) {
+                vBuffer.get(byteData, outputOffset, vSize);
+                outputOffset += vSize;
+            } else {
+                for (int inputOffset = 0; inputOffset < vSize; inputOffset += vStride) {
+                    vBuffer.position(inputOffset);
+                    vBuffer.get(byteData, outputOffset, Math.min(vBuffer.remaining(), width));
+                    outputOffset += width;
+                }
+            }
+            if (width == uStride) {
+                uBuffer.get(byteData, outputOffset, uSize);
+                outputOffset += uSize;
+            } else {
+                for (int inputOffset = 0; inputOffset < uSize; inputOffset += uStride) {
+                    uBuffer.position(inputOffset);
+                    uBuffer.get(byteData, outputOffset, Math.min(uBuffer.remaining(), width));
+                    outputOffset += width;
+                }
+            }
 
             buffers[currentBuffer].put(byteData);
             buffers[currentBuffer].position(0);
