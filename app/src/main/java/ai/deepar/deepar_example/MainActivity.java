@@ -1,12 +1,14 @@
 package ai.deepar.deepar_example;
 
+import static android.os.Environment.getExternalStoragePublicDirectory;
+
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.Image;
-import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.format.DateFormat;
@@ -51,7 +53,7 @@ import ai.deepar.ar.DeepARImageFormat;
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, AREventListener {
 
     // Default camera lens value, change to CameraSelector.LENS_FACING_BACK to initialize with back camera
-    private int defaultLensFacing = CameraSelector.LENS_FACING_FRONT;
+    private final int defaultLensFacing = CameraSelector.LENS_FACING_FRONT;
     private ARSurfaceProvider surfaceProvider = null;
     private int lensFacing = defaultLensFacing;
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
@@ -237,9 +239,13 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
                         public void onClick(View v) {
                             if(recording) {
                                 deepAR.stopVideoRecording();
+                                Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                                Uri contentUri = Uri.fromFile(videoFileName);
+                                mediaScanIntent.setData(contentUri);
+                                sendBroadcast(mediaScanIntent);
                                 Toast.makeText(getApplicationContext(), "Recording " + videoFileName.getName() + " saved.", Toast.LENGTH_LONG).show();
                             } else {
-                                videoFileName = new File(getExternalFilesDir(Environment.DIRECTORY_MOVIES), "video_" + new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(new Date()) + ".mp4");
+                                videoFileName = new File(getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "video_" + new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss").format(new Date()) + ".mp4");
                                 deepAR.startVideoRecording(videoFileName.toString(), width/2, height/2);
                                 Toast.makeText(getApplicationContext(), "Recording started.", Toast.LENGTH_SHORT).show();
                             }
@@ -547,13 +553,16 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     public void screenshotTaken(Bitmap bitmap) {
         CharSequence now = DateFormat.format("yyyy_MM_dd_hh_mm_ss", new Date());
         try {
-            File imageFile = new File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "image_" + now + ".jpg");
+            File imageFile = new File(getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "image_" + now + ".jpg");
             FileOutputStream outputStream = new FileOutputStream(imageFile);
             int quality = 100;
             bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream);
             outputStream.flush();
             outputStream.close();
-            MediaScannerConnection.scanFile(MainActivity.this, new String[]{imageFile.toString()}, null, null);
+            Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+            Uri contentUri = Uri.fromFile(imageFile);
+            mediaScanIntent.setData(contentUri);
+            this.sendBroadcast(mediaScanIntent);
             Toast.makeText(MainActivity.this, "Screenshot " + imageFile.getName() + " saved.", Toast.LENGTH_SHORT).show();
         } catch (Throwable e) {
             e.printStackTrace();
