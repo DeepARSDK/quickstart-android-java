@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private int currentBuffer = 0;
     private boolean buffersInitialized = false;
     private static final int NUMBER_OF_BUFFERS=2;
-    private static final boolean useExternalCameraTexture = true;
+    private static final boolean useExternalCameraTexture = false;
 
     private DeepAR deepAR;
 
@@ -352,7 +352,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
-        CameraResolutionPreset cameraResolutionPreset = CameraResolutionPreset.P1920x1080;
+        CameraResolutionPreset cameraResolutionPreset = CameraResolutionPreset.P640x480;
         int width;
         int height;
         int orientation = getScreenOrientation();
