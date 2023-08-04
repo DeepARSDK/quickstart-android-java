@@ -31,7 +31,7 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment:2.3.4'
     implementation 'androidx.navigation:navigation-ui:2.3.4'
     testImplementation 'junit:junit:4.12'
-    implementation 'ai.deepar.ar:DeepAR:5.3.0'
+    implementation "ai.deepar.ar:DeepAR:5.3.1-android-13-alpha-18"
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
     def camerax_version = "1.0.1"
