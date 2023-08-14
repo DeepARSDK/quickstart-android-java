@@ -21,9 +21,6 @@ allprojects {
         maven {
             url "https://sdk.developer.deepar.ai/maven-android-repository/releases/"
         }
-        maven {
-            url "https://sdk.developer.deepar.ai/maven-android-repository/alpha_releases/"
-        }
     }
 }
 
