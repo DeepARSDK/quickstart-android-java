@@ -23,7 +23,6 @@ import ai.deepar.ar.DeepAR;
  * Surface provider used for CameraX preview use-case that provides DeepAR's external GL texture
  * wrapped in SurfaceTexture.
  */
-@OptIn(markerClass = androidx.camera.core.ExperimentalUseCaseGroup.class)
 public class ARSurfaceProvider implements Preview.SurfaceProvider {
     private static final String tag = ARSurfaceProvider.class.getSimpleName();
 

@@ -59,7 +59,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private ByteBuffer[] buffers;
     private int currentBuffer = 0;
-    private boolean buffersInitialized = false;
     private static final int NUMBER_OF_BUFFERS=2;
     private static final boolean useExternalCameraTexture = false;
 
@@ -356,7 +355,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
 
     private void bindImageAnalysis(@NonNull ProcessCameraProvider cameraProvider) {
-        CameraResolutionPreset cameraResolutionPreset = CameraResolutionPreset.P640x480;
+        CameraResolutionPreset cameraResolutionPreset = CameraResolutionPreset.P1920x1080;
         int width;
         int height;
         int orientation = getScreenOrientation();
@@ -384,90 +383,38 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
             preview.setSurfaceProvider(surfaceProvider);
             surfaceProvider.setMirror(lensFacing == CameraSelector.LENS_FACING_FRONT);
         } else {
+            buffers = new ByteBuffer[NUMBER_OF_BUFFERS];
+            for (int i = 0; i < NUMBER_OF_BUFFERS; i++) {
+                buffers[i] = ByteBuffer.allocateDirect(width * height * 4);
+                buffers[i].order(ByteOrder.nativeOrder());
+                buffers[i].position(0);
+            }
+
             ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
                     .setTargetResolution(cameraResolution)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build();
             imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), imageAnalyzer);
-            buffersInitialized = false;
             cameraProvider.unbindAll();
             cameraProvider.bindToLifecycle((LifecycleOwner)this, cameraSelector, imageAnalysis);
-        }
-    }
-
-    private void initializeBuffers(int size) {
-        this.buffers = new ByteBuffer[NUMBER_OF_BUFFERS];
-        for (int i = 0; i < NUMBER_OF_BUFFERS; i++) {
-            this.buffers[i] = ByteBuffer.allocateDirect(size);
-            this.buffers[i].order(ByteOrder.nativeOrder());
-            this.buffers[i].position(0);
         }
     }
 
     private ImageAnalysis.Analyzer imageAnalyzer = new ImageAnalysis.Analyzer() {
         @Override
         public void analyze(@NonNull ImageProxy image) {
-            ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
-            ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
-            ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
-
-            int ySize = yBuffer.remaining();
-            int uSize = uBuffer.remaining();
-            int vSize = vBuffer.remaining();
-
-            if(!buffersInitialized) {
-                buffersInitialized = true;
-                initializeBuffers(ySize + uSize + vSize);
-            }
-
-            byte[] byteData = new byte[ySize + uSize + vSize];
-
-            int width = image.getWidth();
-            int yStride = image.getPlanes()[0].getRowStride();
-            int uStride = image.getPlanes()[1].getRowStride();
-            int vStride = image.getPlanes()[2].getRowStride();
-            int outputOffset = 0;
-            if (width == yStride) {
-                yBuffer.get(byteData, outputOffset, ySize);
-                outputOffset += ySize;
-            } else {
-                for (int inputOffset = 0; inputOffset < ySize; inputOffset += yStride) {
-                    yBuffer.position(inputOffset);
-                    yBuffer.get(byteData, outputOffset, Math.min(yBuffer.remaining(), width));
-                    outputOffset += width;
-                }
-            }
-            //U and V are swapped
-            if (width == vStride) {
-                vBuffer.get(byteData, outputOffset, vSize);
-                outputOffset += vSize;
-            } else {
-                for (int inputOffset = 0; inputOffset < vSize; inputOffset += vStride) {
-                    vBuffer.position(inputOffset);
-                    vBuffer.get(byteData, outputOffset, Math.min(vBuffer.remaining(), width));
-                    outputOffset += width;
-                }
-            }
-            if (width == uStride) {
-                uBuffer.get(byteData, outputOffset, uSize);
-                outputOffset += uSize;
-            } else {
-                for (int inputOffset = 0; inputOffset < uSize; inputOffset += uStride) {
-                    uBuffer.position(inputOffset);
-                    uBuffer.get(byteData, outputOffset, Math.min(uBuffer.remaining(), width));
-                    outputOffset += width;
-                }
-            }
-
-            buffers[currentBuffer].put(byteData);
+            ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+            buffer.rewind();
+            buffers[currentBuffer].put(buffer);
             buffers[currentBuffer].position(0);
             if (deepAR != null) {
                 deepAR.receiveFrame(buffers[currentBuffer],
                         image.getWidth(), image.getHeight(),
                         image.getImageInfo().getRotationDegrees(),
                         lensFacing == CameraSelector.LENS_FACING_FRONT,
-                        DeepARImageFormat.YUV_420_888,
-                        image.getPlanes()[1].getPixelStride()
+                        DeepARImageFormat.RGBA_8888,
+                        image.getPlanes()[0].getPixelStride()
                 );
             }
             currentBuffer = (currentBuffer + 1) % NUMBER_OF_BUFFERS;
