@@ -3,6 +3,7 @@ package ai.deepar.deepar_example;
 import static android.os.Environment.getExternalStoragePublicDirectory;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -14,6 +15,7 @@ import android.os.Environment;
 import android.text.format.DateFormat;
 import android.util.DisplayMetrics;
 import android.util.Size;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -46,6 +48,8 @@ import java.util.concurrent.ExecutionException;
 
 import ai.deepar.ar.ARErrorType;
 import ai.deepar.ar.AREventListener;
+import ai.deepar.ar.ARTouchInfo;
+import ai.deepar.ar.ARTouchType;
 import ai.deepar.ar.CameraResolutionPreset;
 import ai.deepar.ar.DeepAR;
 import ai.deepar.ar.DeepARImageFormat;
@@ -64,9 +68,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     private DeepAR deepAR;
 
-    private int currentMask=0;
     private int currentEffect=0;
-    private int currentFilter=0;
 
     private int screenOrientation;
 
@@ -141,11 +143,27 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
 
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void initalizeViews() {
         ImageButton previousMask = findViewById(R.id.previousMask);
         ImageButton nextMask = findViewById(R.id.nextMask);
 
         SurfaceView arView = findViewById(R.id.surface);
+
+        arView.setOnTouchListener((view, motionEvent) -> {
+            switch (motionEvent.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    deepAR.touchOccurred(new ARTouchInfo(motionEvent.getX(), motionEvent.getY(), ARTouchType.Start));
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    deepAR.touchOccurred(new ARTouchInfo(motionEvent.getX(), motionEvent.getY(), ARTouchType.Move));
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    deepAR.touchOccurred(new ARTouchInfo(motionEvent.getX(), motionEvent.getY(), ARTouchType.End));
+                    return true;
+            }
+            return false;
+        });
 
         arView.getHolder().addCallback(this);
 
@@ -334,7 +352,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     }
     private void initializeDeepAR() {
         deepAR = new DeepAR(this);
-        deepAR.setLicenseKey("your_license_key_here");
+        deepAR.setLicenseKey("47e6a945b48d0c92faf3821ddd6f89dbc83457a674c18b8bfbc7d640f0f52f084ed0747b6c5c6e38");
         deepAR.initialize(this, this);
         setupCamera();
     }
