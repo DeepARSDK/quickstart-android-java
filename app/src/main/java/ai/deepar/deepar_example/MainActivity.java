@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.text.format.DateFormat;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.Surface;
@@ -55,6 +56,7 @@ import ai.deepar.ar.DeepAR;
 import ai.deepar.ar.DeepARImageFormat;
 
 public class MainActivity extends AppCompatActivity implements SurfaceHolder.Callback, AREventListener {
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     // Default camera lens value, change to CameraSelector.LENS_FACING_BACK to initialize with back camera
     private final int defaultLensFacing = CameraSelector.LENS_FACING_FRONT;
@@ -122,25 +124,16 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     private void initializeFilters() {
         effects = new ArrayList<>();
         effects.add("none");
-        effects.add("viking_helmet.deepar");
-        effects.add("MakeupLook.deepar");
-        effects.add("Split_View_Look.deepar");
-        effects.add("Emotions_Exaggerator.deepar");
-        effects.add("Emotion_Meter.deepar");
-        effects.add("Stallone.deepar");
-        effects.add("flower_face.deepar");
-        effects.add("galaxy_background.deepar");
-        effects.add("Humanoid.deepar");
-        effects.add("Neon_Devil_Horns.deepar");
-        effects.add("Ping_Pong.deepar");
-        effects.add("Pixel_Hearts.deepar");
-        effects.add("Snail.deepar");
-        effects.add("Hope.deepar");
-        effects.add("Vendetta_Mask.deepar");
-        effects.add("Fire_Effect.deepar");
-        effects.add("burning_effect.deepar");
-        effects.add("Elephant_Trunk.deepar");
-
+        effects.add("Headphones_v34.deepar");
+        effects.add("MatrixResurrections_020.deepar");
+        effects.add("Summer_BlueFloat_006.deepar");
+        effects.add("GlobalNews_23.deepar");
+        effects.add("Moon_009.deepar");
+        effects.add("Rave_V10.deepar");
+        effects.add("Jacket_Arsenal_001.deepar");
+        effects.add("PL_Tottenham_002.deepar");
+        effects.add("jersey_Brasil_V1.deepar");
+        effects.add("Love_body.deepar");
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -354,6 +347,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
         deepAR = new DeepAR(this);
         deepAR.setLicenseKey("your_license_key_here");
         deepAR.initialize(this, this);
+        deepAR.generateBodyTrackingCacheFiles(this, 2);
         setupCamera();
     }
 
@@ -588,5 +582,20 @@ public class MainActivity extends AppCompatActivity implements SurfaceHolder.Cal
     @Override
     public void effectSwitched(String s) {
 
+    }
+
+    @Override
+    public void bodyTrackingInitializationStarted(String s) {
+        Log.i(TAG, "bodyTrackingInitializationStarted: " + s);
+    }
+
+    @Override
+    public void bodyTrackingInitialized() {
+        Log.i(TAG, "bodyTrackingInitialized");
+    }
+
+    @Override
+    public void bodyTrackingError(String s) {
+        Log.e(TAG, "bodyTrackingError: " + s);
     }
 }
